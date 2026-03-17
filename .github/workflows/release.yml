@@ -1,8 +1,6 @@
 name: Release
 on:
   workflow_dispatch:
-  schedule:
-  - cron: "0 8 * * Wed,Sun"
 jobs:
   build:
     runs-on: ubuntu-latest
