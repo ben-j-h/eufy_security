@@ -34,10 +34,28 @@ class EufySecurityDataUpdateCoordinator(DataUpdateCoordinator):
         self.data = {}
         self._api = ApiClient(self.config, aiohttp_client.async_get_clientsession(self.hass), self._on_error)
 
+    def _wire_smartdrop_pin_mapping(self):
+        """Attach pin name resolver and new-code callback to all devices."""
+        for device in self._api.devices.values():
+            device.pin_names = self.config.pin_names or {}
+            device.on_new_code = self._on_new_smartdrop_code
+
+    async def _on_new_smartdrop_code(self, serial_no: str, code: str):
+        """Persist a newly seen delivery code to config entry options."""
+        seen = list(self.config.seen_codes or [])
+        if code not in seen:
+            seen.append(code)
+            self.config.seen_codes = seen
+            self.hass.config_entries.async_update_entry(
+                self.config.entry,
+                options={**self.config.entry.options, "seen_codes": seen},
+            )
+
     async def initialize(self):
         """Initialize the integration"""
         try:
             await self._api.connect()
+            self._wire_smartdrop_pin_mapping()
         except CaptchaRequiredException as exc:
             self.config.captcha_id = exc.captcha_id
             self.config.captcha_img = exc.captcha_img

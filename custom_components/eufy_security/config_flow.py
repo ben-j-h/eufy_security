@@ -18,28 +18,43 @@ from .model import Config, ConfigField
 _LOGGER = logging.getLogger(__name__)
 
 
+PIN_FIELD_PREFIX = "pin_"
+
+
 class EufySecurityOptionFlowHandler(config_entries.OptionsFlow):
     """Option flow handler for integration"""
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         """Initialize option flow handler"""
         self.config = Config.parse(config_entry)
+        self._seen_codes = list(self.config.seen_codes or [])
+        self._pin_names = dict(self.config.pin_names or {})
         _LOGGER.debug(f"{DOMAIN} EufySecurityOptionFlowHandler - {config_entry.options}")
-        self.schema = vol.Schema(
-            {
-                vol.Optional(ConfigField.sync_interval.name, default=self.config.sync_interval): int,
-                vol.Optional(ConfigField.rtsp_server_address.name, default=self.config.rtsp_server_address): str,
-                vol.Optional(ConfigField.no_stream_in_hass.name, default=self.config.no_stream_in_hass): bool,
-                vol.Optional(ConfigField.name_for_custom1.name, default=self.config.name_for_custom1): str,
-                vol.Optional(ConfigField.name_for_custom2.name, default=self.config.name_for_custom2): str,
-                vol.Optional(ConfigField.name_for_custom3.name, default=self.config.name_for_custom3): str,
-            }
-        )
+
+        schema_dict = {
+            vol.Optional(ConfigField.sync_interval.name, default=self.config.sync_interval): int,
+            vol.Optional(ConfigField.rtsp_server_address.name, default=self.config.rtsp_server_address): str,
+            vol.Optional(ConfigField.no_stream_in_hass.name, default=self.config.no_stream_in_hass): bool,
+            vol.Optional(ConfigField.name_for_custom1.name, default=self.config.name_for_custom1): str,
+            vol.Optional(ConfigField.name_for_custom2.name, default=self.config.name_for_custom2): str,
+            vol.Optional(ConfigField.name_for_custom3.name, default=self.config.name_for_custom3): str,
+        }
+        for code in self._seen_codes:
+            schema_dict[vol.Optional(f"{PIN_FIELD_PREFIX}{code}", default=self._pin_names.get(code, ""))] = str
+
+        self.schema = vol.Schema(schema_dict)
 
     async def async_step_init(self, user_input=None):
         """Form handler"""
         if user_input is not None:
             _LOGGER.debug(f"{DOMAIN} user input in option flow : %s", user_input)
+            pin_names = {}
+            for code in self._seen_codes:
+                name = user_input.pop(f"{PIN_FIELD_PREFIX}{code}", "").strip()
+                if name:
+                    pin_names[code] = name
+            user_input["pin_names"] = pin_names
+            user_input["seen_codes"] = self._seen_codes
             return self.async_create_entry(title="", data=user_input)
 
         return self.async_show_form(step_id="init", data_schema=self.schema)

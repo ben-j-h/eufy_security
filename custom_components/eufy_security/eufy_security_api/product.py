@@ -35,6 +35,8 @@ class Product:
         self._set_metadata(metadata)
 
         self.pin_verified_future = None
+        self.pin_names: dict = {}
+        self.on_new_code = None  # async callback(serial_no: str, code: str)
 
     def _set_properties(self, properties: dict) -> None:
         self.properties = properties
@@ -107,7 +109,13 @@ class Product:
             callback_func()
 
     async def _handle_property_changed(self, event: Event):
-        self.properties[event.data[MessageField.NAME.value]] = event.data[MessageField.VALUE.value]
+        name = event.data[MessageField.NAME.value]
+        value = event.data[MessageField.VALUE.value]
+        if name == "lastOpenedByName" and isinstance(value, str) and value.isdigit() and value:
+            if self.on_new_code is not None:
+                await self.on_new_code(self.serial_no, value)
+            value = self.pin_names.get(value, value)
+        self.properties[name] = value
 
     async def _handle_pin_verified(self, event: Event):
         self.pin_verified_future.set_result(event)
