@@ -29,6 +29,7 @@
     "step": {
       "init": {
         "title": "Eufy Security: Configuration",
+        "description": "SmartDrop delivery codes appear below once used. Enter a friendly name (e.g. Amazon, UPS) next to each code to identify who opened the box.",
         "data": {
           "sync_interval": "Cloud Scan Interval in seconds [1 to 9999]",
           "rtsp_server_address": "Host IP Address for GO2RTC Add On (P2P)",
