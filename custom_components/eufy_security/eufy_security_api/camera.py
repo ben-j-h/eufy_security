@@ -75,7 +75,18 @@ class Camera(Device):
         self.stream_debug = None
 
         if self.picture_base64 is not None:
-            self.image_last_updated = datetime.datetime.now(datetime.timezone.utc)
+            self.image_last_updated = self._parse_picture_time(self.picture_base64)
+
+    @staticmethod
+    def _parse_picture_time(picture) -> datetime.datetime:
+        """Return the capture time embedded in the picture object, or now() as fallback."""
+        try:
+            ts = picture.get("time") if isinstance(picture, dict) else None
+            if ts:
+                return datetime.datetime.fromisoformat(ts).replace(tzinfo=datetime.timezone.utc)
+        except (AttributeError, ValueError):
+            pass
+        return datetime.datetime.now(datetime.timezone.utc)
 
     @property
     def is_streaming(self) -> bool:
@@ -277,4 +288,4 @@ class Camera(Device):
         _LOGGER.debug(f"camera _handle_property_changed - {event.data[MessageField.NAME.value] }")
 
         if event.data[MessageField.NAME.value] == MessageField.PICTURE.value:
-            self.image_last_updated = datetime.datetime.now(datetime.timezone.utc)
+            self.image_last_updated = self._parse_picture_time(event.data.get(MessageField.VALUE.value))
