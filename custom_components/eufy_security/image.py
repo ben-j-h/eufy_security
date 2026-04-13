@@ -44,6 +44,8 @@ class EufySecurityImage(ImageEntity, EufySecurityEntity):
 
         # camera image
         self._last_image = None
+        if self.product.picture_base64 is not None:
+            self._last_image = self.product.picture_bytes
 
     @property
     def image_last_updated(self) -> datetime | None:

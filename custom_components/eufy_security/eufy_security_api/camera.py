@@ -74,6 +74,9 @@ class Camera(Device):
 
         self.stream_debug = None
 
+        if self.picture_base64 is not None:
+            self.image_last_updated = datetime.datetime.now(datetime.timezone.utc)
+
     @property
     def is_streaming(self) -> bool:
         """Is Camera in Streaming Status"""
