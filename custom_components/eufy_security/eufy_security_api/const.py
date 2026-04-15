@@ -75,6 +75,7 @@ class MessageField(Enum):
     # camera specific
     PICTURE_URL = "pictureUrl"
     PICTURE = "picture"
+    DELIVERY_PICTURE = "deliveryPicture"
     DIRECTION = "direction"
     POSITION = "position"
     LIVE_STREAMING = "livestreaming"
