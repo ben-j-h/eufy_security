@@ -73,9 +73,12 @@ class Camera(Device):
         self.rtsp_started_event = asyncio.Event()
 
         self.stream_debug = None
+        self.delivery_image_last_updated = None
 
         if self.picture_base64 is not None:
             self.image_last_updated = self._parse_picture_time(self.picture_base64)
+        if self.delivery_picture_base64 is not None:
+            self.delivery_image_last_updated = self._parse_picture_time(self.delivery_picture_base64)
 
     @staticmethod
     def _parse_picture_time(picture) -> datetime.datetime:
@@ -263,6 +266,16 @@ class Camera(Device):
         """Returns picture bytes in base64 format"""
         return bytearray(self.picture_base64["data"]["data"])
 
+    @property
+    def delivery_picture_base64(self):
+        """Returns delivery event picture bytes in base64 format, or None if not supported."""
+        return self.properties.get(MessageField.DELIVERY_PICTURE.value)
+
+    @property
+    def delivery_picture_bytes(self):
+        """Returns delivery event picture as bytes."""
+        return bytearray(self.delivery_picture_base64["data"]["data"])
+
     def set_stream_provider(self, stream_provider: StreamProvider) -> None:
         """Set stream provider for camera instance"""
         self.stream_provider = stream_provider
@@ -289,3 +302,5 @@ class Camera(Device):
 
         if event.data[MessageField.NAME.value] == MessageField.PICTURE.value:
             self.image_last_updated = self._parse_picture_time(event.data.get(MessageField.VALUE.value))
+        elif event.data[MessageField.NAME.value] == MessageField.DELIVERY_PICTURE.value:
+            self.delivery_image_last_updated = self._parse_picture_time(event.data.get(MessageField.VALUE.value))
