@@ -30,7 +30,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     for product in coordinator.devices.values():
         if product.is_camera is True:
             entities.append(EufySecurityImage(coordinator, Metadata.parse(product, {"name": "camera", "label": "Camera"})))
-            if MessageField.DELIVERY_PICTURE.value in product.properties:
+            if MessageField.DELIVERY_PICTURE.value in product.metadata:
                 entities.append(EufySecurityDeliveryImage(coordinator, Metadata.parse(product, {"name": "delivery_camera", "label": "Delivery Camera"})))
 
     async_add_entities(entities)
