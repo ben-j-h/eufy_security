@@ -58,6 +58,8 @@ class Camera(Device):
         self.config = config
         self.voices = voices
         self.image_last_updated = None
+        self.delivery_thumbnail_last_updated = None
+        self.delivery_crop_last_updated = None
 
         self.stream_future = None
         self.stream_checker = None
@@ -73,12 +75,9 @@ class Camera(Device):
         self.rtsp_started_event = asyncio.Event()
 
         self.stream_debug = None
-        self.delivery_image_last_updated = None
 
         if self.picture_base64 is not None:
             self.image_last_updated = self._parse_picture_time(self.picture_base64)
-        if self.delivery_picture_base64 is not None:
-            self.delivery_image_last_updated = self._parse_picture_time(self.delivery_picture_base64)
 
     @staticmethod
     def _parse_picture_time(picture) -> datetime.datetime:
@@ -267,14 +266,20 @@ class Camera(Device):
         return bytearray(self.picture_base64["data"]["data"])
 
     @property
-    def delivery_picture_base64(self):
-        """Returns delivery event picture bytes in base64 format, or None if not supported."""
-        return self.properties.get(MessageField.DELIVERY_PICTURE.value)
+    def delivery_thumbnail_base64(self):
+        return self.properties.get(MessageField.DELIVERY_THUMBNAIL.value)
 
     @property
-    def delivery_picture_bytes(self):
-        """Returns delivery event picture as bytes."""
-        return bytearray(self.delivery_picture_base64["data"]["data"])
+    def delivery_thumbnail_bytes(self):
+        return bytearray(self.delivery_thumbnail_base64["data"]["data"])
+
+    @property
+    def delivery_crop_base64(self):
+        return self.properties.get(MessageField.DELIVERY_CROP.value)
+
+    @property
+    def delivery_crop_bytes(self):
+        return bytearray(self.delivery_crop_base64["data"]["data"])
 
     def set_stream_provider(self, stream_provider: StreamProvider) -> None:
         """Set stream provider for camera instance"""
@@ -300,7 +305,10 @@ class Camera(Device):
         await super()._handle_property_changed(event)
         _LOGGER.debug(f"camera _handle_property_changed - {event.data[MessageField.NAME.value] }")
 
-        if event.data[MessageField.NAME.value] == MessageField.PICTURE.value:
+        name = event.data[MessageField.NAME.value]
+        if name == MessageField.PICTURE.value:
             self.image_last_updated = self._parse_picture_time(event.data.get(MessageField.VALUE.value))
-        elif event.data[MessageField.NAME.value] == MessageField.DELIVERY_PICTURE.value:
-            self.delivery_image_last_updated = self._parse_picture_time(event.data.get(MessageField.VALUE.value))
+        elif name == MessageField.DELIVERY_THUMBNAIL.value:
+            self.delivery_thumbnail_last_updated = self._parse_picture_time(event.data.get(MessageField.VALUE.value))
+        elif name == MessageField.DELIVERY_CROP.value:
+            self.delivery_crop_last_updated = self._parse_picture_time(event.data.get(MessageField.VALUE.value))
