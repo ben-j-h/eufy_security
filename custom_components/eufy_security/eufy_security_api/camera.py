@@ -81,12 +81,22 @@ class Camera(Device):
 
     @staticmethod
     def _parse_picture_time(picture) -> datetime.datetime:
-        """Return the capture time embedded in the picture object, or now() as fallback."""
+        """Return the capture time embedded in the picture object, or now() as fallback.
+
+        The client derives ``picture["time"]`` from the recording filename, which is
+        the station's *local* wall-clock time with no offset (e.g. "2026-09-05T20:28:05").
+        Interpret a naive value as local time and convert to UTC — labelling it UTC
+        directly shifts the displayed time by the local offset (a PDT event at 8:28 PM
+        showed up as 1:28 PM). A value that already carries an offset is used as-is.
+        """
         try:
             ts = picture.get("time") if isinstance(picture, dict) else None
             if ts:
-                return datetime.datetime.fromisoformat(ts).replace(tzinfo=datetime.timezone.utc)
-        except (AttributeError, ValueError):
+                parsed = datetime.datetime.fromisoformat(ts)
+                if parsed.tzinfo is None:
+                    parsed = parsed.astimezone()  # attach the system (== HA) local tz
+                return parsed.astimezone(datetime.timezone.utc)
+        except (AttributeError, ValueError, OSError):
             pass
         return datetime.datetime.now(datetime.timezone.utc)
 
