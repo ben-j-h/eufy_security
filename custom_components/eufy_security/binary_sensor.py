@@ -3,6 +3,7 @@ import logging
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -57,6 +58,8 @@ class EufySecurityProductEntity(BinarySensorEntity, CoordinatorEntity):
         self._attr_unique_id = f"{DOMAIN}_{self.product.product_type.value}_{self.product.serial_no}_debug"
         self._attr_should_poll = False
         self._attr_name = f"{self.product.name} Debug ({self.product.product_type.value})"
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_entity_registry_enabled_default = False
 
     @property
     def is_on(self):

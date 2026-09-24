@@ -37,6 +37,7 @@ class Product:
         self.pin_verified_future = None
         self.pin_names: dict = {}
         self.on_new_code = None  # async callback(serial_no: str, code: str)
+        self.smartdrop_open_listeners: list[Callable[[dict], None]] = []
 
     def _set_properties(self, properties: dict) -> None:
         self.properties = properties
@@ -116,6 +117,15 @@ class Product:
                 await self.on_new_code(self.serial_no, value)
             value = self.pin_names.get(value, value)
         self.properties[name] = value
+
+    async def _handle_smartdrop_opened(self, event: Event):
+        data = dict(event.data)
+        name = data.get("openedByName", "")
+        if isinstance(name, str) and name.isdigit():
+            # No carrier name was pushed — use the user's name for this PIN slot, if configured
+            data["openedByName"] = self.pin_names.get(name, name)
+        for listener in list(self.smartdrop_open_listeners):
+            listener(data)
 
     async def _handle_pin_verified(self, event: Event):
         self.pin_verified_future.set_result(event)

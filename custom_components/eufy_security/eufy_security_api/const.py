@@ -112,6 +112,7 @@ class EventNameToHandler(Enum):
     connected = "connected"
     disconnected = "disconnected"
     connection_error = "connection error"
+    smartdrop_opened = "smartdrop opened"
 
 
 class ProductType(Enum):
